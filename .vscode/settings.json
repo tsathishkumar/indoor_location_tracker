@@ -1,0 +1,6 @@
+{
+    "terminal.integrated.env.osx": {
+        "PATH": "/Users/tsathish/.platformio/penv/bin:/Users/tsathish/.platformio/penv:/Users/tsathish/.nvm/versions/node/v8.10.0/bin:/Users/tsathish/.cargo/bin:/Users/tsathish/.rvm/rubies/ruby-2.5.1/bin:/usr/local/bin:/Users/tsathish/Library/Python/2.7/bin:/Users/tsathish/Library/Python/3.6/bin:/Users/tsathish/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/tsathish/Programs/android-sdk-macosx/platform-tools/:/Users/tsathish/Programs/android-sdk-macosx/tools/:/Users/sathish/Programs/play-2.0.4:/Users/tsathish/.rvm/bin",
+        "PLATFORMIO_CALLER": "vscode"
+    }
+}

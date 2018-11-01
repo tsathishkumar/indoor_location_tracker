@@ -1,9 +1,69 @@
 #include <WiFi.h>
+#include <BLEDevice.h>
+#include <BLEScan.h>
+#include <BLEBeacon.h>
+
+#define ENDIAN_CHANGE_U16(x) ((((x)&0xFF00) >> 8) + (((x)&0xFF) << 8))
 
 WiFiClient client;
 String ssid = WIFI_SSID;
 String password = PASSWORD;
 String server_host = HOST_IP_ADDRESS;
+int scanTime = 15; //In seconds
+char minor[20], major[20];
+BLEBeacon myBeacon;
+BLEScan *pBLEScan;
+
+class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
+{
+
+  void onResult(BLEAdvertisedDevice advertisedDevice)
+  {
+    int minor, major, rssi;
+    BLEAdvertisedDevice *advertisedDeviceTemp = &advertisedDevice;
+    if (advertisedDeviceTemp->getManufacturerData().length() != 25)
+    {
+      return;
+    }
+    myBeacon.setData(advertisedDeviceTemp->getManufacturerData());
+    // Add only the beacons that we are interested in
+    minor = ENDIAN_CHANGE_U16(myBeacon.getMinor());
+    major = ENDIAN_CHANGE_U16(myBeacon.getMajor());
+    rssi = advertisedDeviceTemp->getRSSI();
+    print_beacon_details(minor, major, rssi);
+  }
+
+  void print_beacon_details(int minor, int major, int rssi)
+  {
+    if (!(minor == 100 && major == 100))
+    {
+      Serial.print(minor);
+      Serial.print(",");
+      Serial.print(major);
+      Serial.print("=");
+      Serial.print(rssi);
+      Serial.println("");
+    }
+  }
+};
+
+void setup_ble()
+{
+  pBLEScan = BLEDevice::getScan();
+  pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
+  pBLEScan->setActiveScan(true);
+}
+
+int scan_beacons()
+{
+  BLEDevice::init("");
+  BLEScanResults foundDevices = pBLEScan->start(scanTime);
+  Serial.print(" - Scan done!!");
+  int device_count = foundDevices.getCount();
+  Serial.print(" Devices found: ");
+  Serial.println(device_count);
+  return device_count;
+}
 
 bool connect_wifi(const char *ssid, const char *password)
 {
@@ -23,47 +83,15 @@ bool connect_wifi(const char *ssid, const char *password)
   return true;
 }
 
-int loop_count = 0;
-
 void setup()
 {
   Serial.begin(115200);
   delay(10);
   connect_wifi(ssid.c_str(), password.c_str());
-
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  delay(500);
-
-  const uint16_t port = 5003;
-  const char *host = server_host.c_str(); // ip or dns
-
-  Serial.print("connecting to ");
-  Serial.println(host);
-
-  if (!client.connect(host, port))
-  {
-    Serial.println("connection failed");
-    Serial.println("wait 5 sec...");
-    delay(5000);
-    return;
-  }
+  setup_ble();
 }
 
 void loop()
 {
-  client.print("Client Ready");
-  client.print(++loop_count);
-
-  //read back one line from server
-  String line = client.readStringUntil('\r');
-  while (line == "")
-  {
-    delay(1000);
-    line = client.readStringUntil('\r');
-  }
-  Serial.println(line);
+  scan_beacons();
 }
